@@ -19,3 +19,12 @@ case "$ACTION" in
     exit 1
     ;;
 esac
+
+echo "> Checking service status..."
+for svc in smbd nmbd; do
+  if systemctl is-active --quiet "$svc"; then
+    echo "✅ $svc is running."
+  else
+    echo "❌ $svc is not running."
+  fi
+done
