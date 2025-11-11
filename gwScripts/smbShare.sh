@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+if [[ $(id -u) -ne 0 ]] ; then echo "> Run with sudo or as root!" ; exit 1 ; fi
+
+NAME_SH=$(basename "$0")
+
+if [[ $# -ne 1 ]]; then echo "Usage: $NAME_SH {start|stop}" ; exit 1 ; fi
+
+ACTION=$1
+
+case "$ACTION" in
+  start|stop)
+    echo "> Attempting to $ACTION smbd and nmbd..."
+    systemctl "$ACTION" smbd nmbd
+    ;;
+  *)
+    echo "Invalid argument: $ACTION"
+    echo "Usage: $NAME_SH {start|stop}"
+    exit 1
+    ;;
+esac
