@@ -1,0 +1,58 @@
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+# Visual Studio cache/options directory
+vs/
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+# Compiled object and intermediate files
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.idb
+*.ilk
+# Generated files
+*_i.c
+*_p.c
+*_h.h
+*.tlb
+*.tli
+*.tlh
+# Logs and temporary files
+*.log
+*.tlog
+*.tmp
+# C++ specific cache files
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.VC.opendb
+# Installer and package outputs
+*.cab
+*.msi
+*.msm
+*.msp
+# Ignore NuGet packages (except build targets)
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
