@@ -10,8 +10,8 @@
 using namespace std;
 
 
-std::string filename = "C:\\Users\\dudee\\Desktop\\mormanti.txt";
-LPCWSTR wfilename = L"C:\\Users\\dudee\\Desktop\\mormanti.txt";
+std::string filename = "C:\\Users\\dude\\Desktop\\mormanti.txt";
+LPCWSTR wfilename = L"C:\\Users\\dude\\Desktop\\mormanti.txt";
 
 
 void read() {
