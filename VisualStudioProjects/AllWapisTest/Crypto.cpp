@@ -160,7 +160,7 @@ int crypto() {
     if (!NT_SUCCESS(st)) die_nt("BCryptDecrypt", st);
 
     decrypted[decrypted_written] = '\0';
-    printf("Decrypted: %s\n\n", decrypted);
+    printf("Decrypted: %s\n", decrypted);
 
     // Cleanup
     free(ciphertext);

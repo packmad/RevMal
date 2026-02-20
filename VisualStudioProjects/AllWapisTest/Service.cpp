@@ -44,7 +44,7 @@ void InstallService() {
 		CloseServiceHandle(serviceControlManager);
 	}
 	else {
-		std::cout << "FAIL! Admin priv needed to install service";
+		std::cout << "FAIL! Admin priv needed to install service\n";
 
 	}
 }
