@@ -1,568 +1,173 @@
-#include "MainHeader.h"
+// bcrypt_aes_cbc_example.c
+// Build (Developer Command Prompt for VS):
+//   cl /TC bcrypt_aes_cbc_example.c /W4 /EHsc bcrypt.lib
+//
+// Notes:
+// - Uses Windows CNG (BCrypt) "modern" crypto API.
+// - AES-256-CBC with PKCS#7 padding.
+// - For a real app: generate a random key+IV (BCryptGenRandom) and store/transport them securely.
 
-using namespace std;
-
-#include <tchar.h>
-#include <stdio.h>
+#define _CRT_SECURE_NO_WARNINGS
 #include <windows.h>
-#include <wincrypt.h>
-#include <conio.h>
-#include <string>
+#include <bcrypt.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-// Link with the Advapi32.lib file.
-#pragma comment (lib, "advapi32")
+#pragma comment(lib, "bcrypt.lib")
 
-#define KEYLENGTH  0x00800000
-#define ENCRYPT_ALGORITHM CALG_RC4 
-#define ENCRYPT_BLOCK_SIZE 8 
+#ifndef NT_SUCCESS
+#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
+#endif
 
-bool MyEncryptFile(
-	LPTSTR szSource,
-	LPTSTR szDestination,
-	LPTSTR szPassword);
-
-void MyHandleError(
-	LPTSTR psz,
-	int nErrorNumber);
-
-int crypto()
-{
-	LPTSTR pszSource = LPTSTR(L"input");
-	LPTSTR pszDestination = LPTSTR(L"output");
-	std::cout << pszSource << std::endl;
-	LPTSTR pszPassword = NULL;
-
-	//---------------------------------------------------------------
-	// Call EncryptFile to do the actual encryption.
-	if (MyEncryptFile(pszSource, pszDestination, pszPassword))
-	{
-		printf(
-			"Encryption of the file %s was successful. \n",
-			pszSource);
-		printf(
-			"The encrypted data is in file %s.\n",
-			pszDestination);
-	}
-	else
-	{
-		MyHandleError(
-			LPTSTR("Error encrypting file!\n"),
-			GetLastError());
-	}
-	return 0;
+static void die_nt(const char* msg, NTSTATUS st) {
+    fprintf(stderr, "%s (NTSTATUS=0x%08X)\n", msg, (unsigned)st);
+    exit(1);
 }
 
-bool MyEncryptFile(
-	LPTSTR pszSourceFile,
-	LPTSTR pszDestinationFile,
-	LPTSTR pszPassword)
-{
-	//---------------------------------------------------------------
-	// Declare and initialize local variables.
-	bool fReturn = false;
-	HANDLE hSourceFile = INVALID_HANDLE_VALUE;
-	HANDLE hDestinationFile = INVALID_HANDLE_VALUE;
+static void print_hex(const char* label, const unsigned char* p, DWORD cb) {
+    printf("%s (%lu bytes): ", label, (unsigned long)cb);
+    for (DWORD i = 0; i < cb; i++) printf("%02X", p[i]);
+    printf("\n");
+}
 
-	HCRYPTPROV hCryptProv = NULL;
-	HCRYPTKEY hKey = NULL;
-	HCRYPTKEY hXchgKey = NULL;
-	HCRYPTHASH hHash = NULL;
+int crypto() {
+    // Example plaintext
+    const char* plaintext = "Hello from BCrypt AES-CBC!";
+    DWORD plaintext_len = (DWORD)strlen(plaintext);
 
-	PBYTE pbKeyBlob = NULL;
-	DWORD dwKeyBlobLen;
+    // Hardcoded demo key (32 bytes = AES-256) and IV (16 bytes = AES block size).
+    // DO NOT hardcode keys like this in real software.
+    unsigned char key_bytes[32] = {
+        0x60,0x3D,0xEB,0x10,0x15,0xCA,0x71,0xBE,0x2B,0x73,0xAE,0xF0,0x85,0x7D,0x77,0x81,
+        0x1F,0x35,0x2C,0x07,0x3B,0x61,0x08,0xD7,0x2D,0x98,0x10,0xA3,0x09,0x14,0xDF,0xF4
+    };
+    unsigned char iv0[16] = {
+        0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F
+    };
 
-	PBYTE pbBuffer = NULL;
-	DWORD dwBlockLen;
-	DWORD dwBufferLen;
-	DWORD dwCount;
+    BCRYPT_ALG_HANDLE hAlg = NULL;
+    BCRYPT_KEY_HANDLE hKey = NULL;
+    PUCHAR key_object = NULL;
+    DWORD key_object_len = 0, cbData = 0;
 
-	//---------------------------------------------------------------
-	// Open the source file. 
-	hSourceFile = CreateFile(
-		pszSourceFile,
-		FILE_READ_DATA,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL);
-	if (INVALID_HANDLE_VALUE != hSourceFile)
-	{
-		printf(
-			"The source plaintext file, %s, is open. \n",
-			pszSourceFile);
-	}
-	else
-	{
-		MyHandleError(
-			LPTSTR("Error opening source plaintext file!\n"),
-			GetLastError());
-		return -1;
-	}
+    NTSTATUS st;
 
-	//---------------------------------------------------------------
-	// Open the destination file. 
-	hDestinationFile = CreateFile(
-		pszDestinationFile,
-		FILE_WRITE_DATA,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_ALWAYS,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL);
-	if (INVALID_HANDLE_VALUE != hDestinationFile)
-	{
-		printf(
-			"The destination file, %s, is open. \n",
-			pszDestinationFile);
-	}
-	else
-	{
-		MyHandleError(
-			LPTSTR("Error opening destination file!\n"),
-			GetLastError());
-		return -1;
-	}
+    // 1) Open AES algorithm provider
+    st = BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_AES_ALGORITHM, NULL, 0);
+    if (!NT_SUCCESS(st)) die_nt("BCryptOpenAlgorithmProvider", st);
 
-	//---------------------------------------------------------------
-	// Get the handle to the default provider. 
-	if (CryptAcquireContext(
-		&hCryptProv,
-		NULL,
-		MS_ENHANCED_PROV,
-		PROV_RSA_FULL,
-		0))
-	{
-		printf(
-			"A cryptographic provider has been acquired. \n");
-	}
-	else
-	{
-		MyHandleError(
-			LPTSTR("Error during CryptAcquireContext!\n"),
-			GetLastError());
-		return -1;
-	}
+    // 2) Set chaining mode to CBC
+    st = BCryptSetProperty(
+        hAlg,
+        BCRYPT_CHAINING_MODE,
+        (PUCHAR)BCRYPT_CHAIN_MODE_CBC,
+        (DWORD)sizeof(BCRYPT_CHAIN_MODE_CBC),
+        0
+    );
+    if (!NT_SUCCESS(st)) die_nt("BCryptSetProperty(CHAINING_MODE)", st);
 
-	//---------------------------------------------------------------
-	// Create the session key.
-	if (!pszPassword || !pszPassword[0])
-	{
-		//-----------------------------------------------------------
-		// No password was passed.
-		// Encrypt the file with a random session key, and write the 
-		// key to a file. 
+    // 3) Determine size of key object and allocate it
+    st = BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&key_object_len, sizeof(key_object_len), &cbData, 0);
+    if (!NT_SUCCESS(st)) die_nt("BCryptGetProperty(OBJECT_LENGTH)", st);
 
-		//-----------------------------------------------------------
-		// Create a random session key. 
-		if (CryptGenKey(
-			hCryptProv,
-			ENCRYPT_ALGORITHM,
-			KEYLENGTH | CRYPT_EXPORTABLE,
-			&hKey))
-		{
-			printf("A session key has been created. \n");
-		}
-		else
-		{
-			MyHandleError(
-				LPTSTR("Error during CryptGenKey. \n"),
-				GetLastError());
-			return -1;
-		}
+    key_object = (PUCHAR)HeapAlloc(GetProcessHeap(), 0, key_object_len);
+    if (!key_object) {
+        fprintf(stderr, "HeapAlloc failed\n");
+        exit(1);
+    }
 
-		//-----------------------------------------------------------
-		// Get the handle to the exchange public key. 
-		if (CryptGetUserKey(
-			hCryptProv,
-			AT_KEYEXCHANGE,
-			&hXchgKey))
-		{
-			printf(
-				"The user public key has been retrieved. \n");
-		}
-		else
-		{
-			if (NTE_NO_KEY == GetLastError())
-			{
-				// No exchange key exists. Try to create one.
-				if (!CryptGenKey(
-					hCryptProv,
-					AT_KEYEXCHANGE,
-					CRYPT_EXPORTABLE,
-					&hXchgKey))
-				{
-					MyHandleError(
-						LPTSTR("Could not create "
-							"a user public key.\n"),
-						GetLastError());
-					return -1;
-				}
-			}
-			else
-			{
-				MyHandleError(
-					LPTSTR("User public key is not available and may not exist.\n"),
-					GetLastError());
-				return -1;
-			}
-		}
+    // 4) Create/generate symmetric key from raw key material
+    st = BCryptGenerateSymmetricKey(hAlg, &hKey, key_object, key_object_len, key_bytes, (DWORD)sizeof(key_bytes), 0);
+    if (!NT_SUCCESS(st)) die_nt("BCryptGenerateSymmetricKey", st);
 
-		//-----------------------------------------------------------
-		// Determine size of the key BLOB, and allocate memory. 
-		if (CryptExportKey(
-			hKey,
-			hXchgKey,
-			SIMPLEBLOB,
-			0,
-			NULL,
-			&dwKeyBlobLen))
-		{
-			printf(
-				"The key BLOB is %d bytes long. \n",
-				dwKeyBlobLen);
-		}
-		else
-		{
-			MyHandleError(
-				LPTSTR("Error computing BLOB length! \n"),
-				GetLastError());
-			return -1;
-		}
+    // Encryption uses/updates the IV buffer internally, so use a working copy each time.
+    unsigned char iv_enc[16];
+    memcpy(iv_enc, iv0, sizeof(iv_enc));
 
-		if (pbKeyBlob = (BYTE*)malloc(dwKeyBlobLen))
-		{
-			printf(
-				"Memory is allocated for the key BLOB. \n");
-		}
-		else
-		{
-			MyHandleError(LPTSTR("Out of memory. \n"), E_OUTOFMEMORY);
-			return -1;
-		}
+    // 5) Query required ciphertext size (with PKCS#7 padding)
+    DWORD ciphertext_len = 0;
+    st = BCryptEncrypt(
+        hKey,
+        (PUCHAR)plaintext, plaintext_len,
+        NULL,
+        iv_enc, (DWORD)sizeof(iv_enc),
+        NULL, 0,
+        &ciphertext_len,
+        BCRYPT_BLOCK_PADDING
+    );
+    if (!NT_SUCCESS(st)) die_nt("BCryptEncrypt(size query)", st);
 
-		//-----------------------------------------------------------
-		// Encrypt and export the session key into a simple key 
-		// BLOB. 
-		if (CryptExportKey(
-			hKey,
-			hXchgKey,
-			SIMPLEBLOB,
-			0,
-			pbKeyBlob,
-			&dwKeyBlobLen))
-		{
-			printf("The key has been exported. \n");
-		}
-		else
-		{
-			MyHandleError(
-				LPTSTR("Error during CryptExportKey!\n"),
-				GetLastError());
-			return -1;
-		}
+    unsigned char* ciphertext = (unsigned char*)malloc(ciphertext_len);
+    if (!ciphertext) {
+        fprintf(stderr, "malloc failed\n");
+        exit(1);
+    }
 
-		//-----------------------------------------------------------
-		// Release the key exchange key handle. 
-		if (hXchgKey)
-		{
-			if (!(CryptDestroyKey(hXchgKey)))
-			{
-				MyHandleError(
-					LPTSTR("Error during CryptDestroyKey.\n"),
-					GetLastError());
-				return -1;
-			}
+    // Reset IV copy before the real encrypt call (because the size query also mutates it)
+    memcpy(iv_enc, iv0, sizeof(iv_enc));
 
-			hXchgKey = 0;
-		}
+    // 6) Encrypt
+    DWORD ciphertext_written = 0;
+    st = BCryptEncrypt(
+        hKey,
+        (PUCHAR)plaintext, plaintext_len,
+        NULL,
+        iv_enc, (DWORD)sizeof(iv_enc),
+        ciphertext, ciphertext_len,
+        &ciphertext_written,
+        BCRYPT_BLOCK_PADDING
+    );
+    if (!NT_SUCCESS(st)) die_nt("BCryptEncrypt", st);
 
-		//-----------------------------------------------------------
-		// Write the size of the key BLOB to the destination file. 
-		if (!WriteFile(
-			hDestinationFile,
-			&dwKeyBlobLen,
-			sizeof(DWORD),
-			&dwCount,
-			NULL))
-		{
-			MyHandleError(
-				LPTSTR("Error writing header.\n"),
-				GetLastError());
-			return -1;
-		}
-		else
-		{
-			printf("A file header has been written. \n");
-		}
+    print_hex("Ciphertext", ciphertext, ciphertext_written);
 
-		//-----------------------------------------------------------
-		// Write the key BLOB to the destination file. 
-		if (!WriteFile(
-			hDestinationFile,
-			pbKeyBlob,
-			dwKeyBlobLen,
-			&dwCount,
-			NULL))
-		{
-			MyHandleError(
-				LPTSTR("Error writing header.\n"),
-				GetLastError());
-			return -1;
-		}
-		else
-		{
-			printf(
-				"The key BLOB has been written to the file. \n");
-		}
+    // 7) Decrypt (again, use a fresh IV copy)
+    unsigned char iv_dec[16];
+    memcpy(iv_dec, iv0, sizeof(iv_dec));
 
-		// Free memory.
-		free(pbKeyBlob);
-	}
-	else
-	{
+    DWORD decrypted_len = 0;
+    st = BCryptDecrypt(
+        hKey,
+        ciphertext, ciphertext_written,
+        NULL,
+        iv_dec, (DWORD)sizeof(iv_dec),
+        NULL, 0,
+        &decrypted_len,
+        BCRYPT_BLOCK_PADDING
+    );
+    if (!NT_SUCCESS(st)) die_nt("BCryptDecrypt(size query)", st);
 
-		//-----------------------------------------------------------
-		// The file will be encrypted with a session key derived 
-		// from a password.
-		// The session key will be recreated when the file is 
-		// decrypted only if the password used to create the key is 
-		// available. 
+    unsigned char* decrypted = (unsigned char*)malloc(decrypted_len + 1); // +1 for null terminator
+    if (!decrypted) {
+        fprintf(stderr, "malloc failed\n");
+        exit(1);
+    }
 
-		//-----------------------------------------------------------
-		// Create a hash object. 
-		if (CryptCreateHash(
-			hCryptProv,
-			CALG_MD5,
-			0,
-			0,
-			&hHash))
-		{
-			printf("A hash object has been created. \n");
-		}
-		else
-		{
-			MyHandleError(
-				LPTSTR("Error during CryptCreateHash!\n"),
-				GetLastError());
-			return -1;
-		}
+    // Reset IV again (size query mutated it)
+    memcpy(iv_dec, iv0, sizeof(iv_dec));
 
-		//-----------------------------------------------------------
-		// Hash the password. 
-		if (CryptHashData(
-			hHash,
-			(BYTE*)pszPassword,
-			lstrlen(pszPassword),
-			0))
-		{
-			printf(
-				"The password has been added to the hash. \n");
-		}
-		else
-		{
-			MyHandleError(
-				LPTSTR("Error during CryptHashData. \n"),
-				GetLastError());
-			return -1;
-		}
+    DWORD decrypted_written = 0;
+    st = BCryptDecrypt(
+        hKey,
+        ciphertext, ciphertext_written,
+        NULL,
+        iv_dec, (DWORD)sizeof(iv_dec),
+        decrypted, decrypted_len,
+        &decrypted_written,
+        BCRYPT_BLOCK_PADDING
+    );
+    if (!NT_SUCCESS(st)) die_nt("BCryptDecrypt", st);
 
-		//-----------------------------------------------------------
-		// Derive a session key from the hash object. 
-		if (CryptDeriveKey(
-			hCryptProv,
-			ENCRYPT_ALGORITHM,
-			hHash,
-			KEYLENGTH,
-			&hKey))
-		{
-			printf(
-				"An encryption key is derived from the password hash. \n");
-		}
-		else
-		{
-			MyHandleError(
-				LPTSTR("Error during CryptDeriveKey!\n"),
-				GetLastError());
-			return -1;
-		}
-	}
+    decrypted[decrypted_written] = '\0';
+    printf("Decrypted: %s\n\n", decrypted);
 
-	//---------------------------------------------------------------
-	// The session key is now ready. If it is not a key derived from 
-	// a  password, the session key encrypted with the private key 
-	// has been written to the destination file.
+    // Cleanup
+    free(ciphertext);
+    free(decrypted);
+    if (hKey) BCryptDestroyKey(hKey);
+    if (hAlg) BCryptCloseAlgorithmProvider(hAlg, 0);
+    if (key_object) HeapFree(GetProcessHeap(), 0, key_object);
 
-	//---------------------------------------------------------------
-	// Determine the number of bytes to encrypt at a time. 
-	// This must be a multiple of ENCRYPT_BLOCK_SIZE.
-	// ENCRYPT_BLOCK_SIZE is set by a #define statement.
-	dwBlockLen = 1000 - 1000 % ENCRYPT_BLOCK_SIZE;
-
-	//---------------------------------------------------------------
-	// Determine the block size. If a block cipher is used, 
-	// it must have room for an extra block. 
-	if (ENCRYPT_BLOCK_SIZE > 1)
-	{
-		dwBufferLen = dwBlockLen + ENCRYPT_BLOCK_SIZE;
-	}
-	else
-	{
-		dwBufferLen = dwBlockLen;
-	}
-
-	//---------------------------------------------------------------
-	// Allocate memory. 
-	if (pbBuffer = (BYTE*)malloc(dwBufferLen))
-	{
-		printf(
-			"Memory has been allocated for the buffer. \n");
-	}
-	else
-	{
-		MyHandleError(LPTSTR("Out of memory. \n"), E_OUTOFMEMORY);
-		return -1;
-	}
-
-	//---------------------------------------------------------------
-	// In a do loop, encrypt the source file, 
-	// and write to the source file. 
-	bool fEOF = FALSE;
-	do
-	{
-		//-----------------------------------------------------------
-		// Read up to dwBlockLen bytes from the source file. 
-		if (!ReadFile(
-			hSourceFile,
-			pbBuffer,
-			dwBlockLen,
-			&dwCount,
-			NULL))
-		{
-			MyHandleError(
-				LPTSTR("Error reading plaintext!\n"),
-				GetLastError());
-			return -1;
-		}
-
-		if (dwCount < dwBlockLen)
-		{
-			fEOF = TRUE;
-		}
-
-		//-----------------------------------------------------------
-		// Encrypt data. 
-		if (!CryptEncrypt(
-			hKey,
-			NULL,
-			fEOF,
-			0,
-			pbBuffer,
-			&dwCount,
-			dwBufferLen))
-		{
-			MyHandleError(
-				LPTSTR("Error during CryptEncrypt. \n"),
-				GetLastError());
-			return -1;
-		}
-
-		//-----------------------------------------------------------
-		// Write the encrypted data to the destination file. 
-		if (!WriteFile(
-			hDestinationFile,
-			pbBuffer,
-			dwCount,
-			&dwCount,
-			NULL))
-		{
-			MyHandleError(
-				LPTSTR("Error writing ciphertext.\n"),
-				GetLastError());
-			return -1;
-		}
-
-		//-----------------------------------------------------------
-		// End the do loop when the last block of the source file 
-		// has been read, encrypted, and written to the destination 
-		// file.
-	} while (!fEOF);
-
-	fReturn = true;
-
-Exit_MyEncryptFile:
-	//---------------------------------------------------------------
-	// Close files.
-	if (hSourceFile)
-	{
-		CloseHandle(hSourceFile);
-	}
-
-	if (hDestinationFile)
-	{
-		CloseHandle(hDestinationFile);
-	}
-
-	//---------------------------------------------------------------
-	// Free memory. 
-	if (pbBuffer)
-	{
-		free(pbBuffer);
-	}
-
-
-	//-----------------------------------------------------------
-	// Release the hash object. 
-	if (hHash)
-	{
-		if (!(CryptDestroyHash(hHash)))
-		{
-			MyHandleError(
-				LPTSTR("Error during CryptDestroyHash.\n"),
-				GetLastError());
-		}
-
-		hHash = NULL;
-	}
-
-	//---------------------------------------------------------------
-	// Release the session key. 
-	if (hKey)
-	{
-		if (!(CryptDestroyKey(hKey)))
-		{
-			MyHandleError(
-				LPTSTR("Error during CryptDestroyKey!\n"),
-				GetLastError());
-		}
-	}
-
-	//---------------------------------------------------------------
-	// Release the provider handle. 
-	if (hCryptProv)
-	{
-		if (!(CryptReleaseContext(hCryptProv, 0)))
-		{
-			MyHandleError(
-				LPTSTR("Error during CryptReleaseContext!\n"),
-				GetLastError());
-		}
-	}
-
-	return fReturn;
-} // End Encryptfile.
-
-
-//-------------------------------------------------------------------
-//  This example uses the function MyHandleError, a simple error
-//  handling function, to print an error message to the  
-//  standard error (stderr) file and exit the program. 
-//  For most applications, replace this function with one 
-//  that does more extensive error reporting.
-
-void MyHandleError(LPTSTR psz, int nErrorNumber)
-{
-	_ftprintf(stderr, LPTSTR("An error occurred in the program. \n"));
-	_ftprintf(stderr, LPTSTR("%s\n"), psz);
-	_ftprintf(stderr, LPTSTR("Error number %x.\n"), nErrorNumber);
+    return 0;
 }

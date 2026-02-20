@@ -143,6 +143,7 @@
     <ClCompile Include="AllWapisTest.cpp" />
     <ClCompile Include="Crypto.cpp" />
     <ClCompile Include="DynMemory.cpp" />
+    <ClCompile Include="Exceptions.cpp" />
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="Mutexes.cpp" />
     <ClCompile Include="Network.cpp" />

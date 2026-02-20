@@ -6,16 +6,17 @@
 using namespace std;
 int main()
 {
-    cout << ">>> Start\n";
-    //cout << "\n>>> Processes\n"; processes();
-    //cout << "\n>>> Network\n"; network();
-    //cout << "\n>>> Registry\n"; registry();
-    //cout << "\n>>> Mutexes\n"; mutexes();
-    //cout << "\n>>> Filesystem\n"; filesystem();
-    //cout << "\n>>> Service\n"; service();
-    //cout << "\n>>> Crypto\n"; crypto();
-    cout << "\n>>> Memory\n"; memory();
-    cout << "\n<<< End\n";
+    cout << ">>>> Start >>>>\n";
+    cout << "\n>> Processes\n"; processes();
+    cout << "\n>> Network\n"; network();
+    cout << "\n>> Registry\n"; registry();
+    cout << "\n>> Mutexes\n"; mutexes();
+    cout << "\n>> Filesystem\n"; filesystem();
+    cout << "\n>> Service\n"; service();
+    cout << "\n>> Crypto\n"; crypto();
+    cout << "\n>> Memory\n"; memory();
+    cout << "\n>> Exceptions\n"; exceptions();
+    cout << "\n<<<< End <<<<\n";
     cin.get();
 }
 

@@ -21,3 +21,4 @@ extern int filesystem();
 extern int service();
 extern int crypto(); 
 extern int memory();
+extern int exceptions();
