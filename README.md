@@ -60,7 +60,7 @@ Taught with ♥️ by [Simone Aonzo](https://simoneaonzo.it/) 🇮🇹 at [Eurec
 - Static Analysis 
   - Equality and Similarity
   - Structural Characteristics
-  - Signature-Based Detection [YARA](https://docs.google.com/presentation/d/13_HFHJWHxnuSBjV6HuEUFLsLOhnBIo6wnKLqMqRpZxg/)
+  - Signature-Based Detection [[YARA](https://docs.google.com/presentation/d/13_HFHJWHxnuSBjV6HuEUFLsLOhnBIo6wnKLqMqRpZxg/)]
   - Disassembling
   - Call/Control/Data Graphs
   - Lifting
