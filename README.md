@@ -57,13 +57,16 @@ Taught with ♥️ by [Simone Aonzo](https://simoneaonzo.it/) 🇮🇹 at [Eurec
 
 
 ### Part IV – Static & Dynamic Analysis [[pdf](slides/StaticAndDynamic.pdf)]
-- Static Analysis [[Ghidra](https://docs.google.com/presentation/d/1TxCvwWVlZOxtaPs5zwnFMZNAbWhTnScjuHQ2N4GCD6I/edit?usp=sharing) + [Scripting](Ghidra/ghidra.pdf)]
+- Static Analysis 
   - Equality and Similarity
   - Structural Characteristics
+  - Signature-Based Detection [YARA](https://docs.google.com/presentation/d/13_HFHJWHxnuSBjV6HuEUFLsLOhnBIo6wnKLqMqRpZxg/)
   - Disassembling
   - Call/Control/Data Graphs
   - Lifting
   - Decompiling
+  - [Ghidra](https://docs.google.com/presentation/d/1TxCvwWVlZOxtaPs5zwnFMZNAbWhTnScjuHQ2N4GCD6I/)
+  - [PyGhidra Automation](Ghidra/ghidra.pdf)
 - Dynamic Analysis [[x64dbg](https://docs.google.com/presentation/d/1VEpso-rWsI_PT2iIKwAxJNlxXVLx37o2dVoGGw8-lKg/), [Process Monitor](https://docs.google.com/presentation/d/1u4bPfGMd1jmidV23zGPB_SgXQHZ8Ga1p7EaD1awJ_EI/), [CAPEv2]()]
   - In-guest
   - Out-of-guest 
