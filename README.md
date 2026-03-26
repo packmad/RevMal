@@ -48,6 +48,7 @@ Taught with ♥️ by [Simone Aonzo](https://simoneaonzo.it/) 🇮🇹 at [Eurec
 
 ### Part III – Instruction Set Architecture (ISA) [[pdf](slides/ISA.pdf)]
 - Introduction
+  - Number Representation in Computer Systems [[pdf](slides/NumberRepresentation.pdf)]
 - Intel x86 Architecture and Instructions
 - Application Binary Interface (ABI)
   - x86_32
@@ -61,7 +62,7 @@ Taught with ♥️ by [Simone Aonzo](https://simoneaonzo.it/) 🇮🇹 at [Eurec
   - Equality and Similarity
   - Structural Characteristics
   - Signature-Based Detection
-    - [[YARA](https://docs.google.com/presentation/d/13_HFHJWHxnuSBjV6HuEUFLsLOhnBIo6wnKLqMqRpZxg/)]
+    - [YARA](https://docs.google.com/presentation/d/13_HFHJWHxnuSBjV6HuEUFLsLOhnBIo6wnKLqMqRpZxg/)
   - Disassembling
   - Call/Control/Data Graphs
   - Lifting
@@ -73,7 +74,8 @@ Taught with ♥️ by [Simone Aonzo](https://simoneaonzo.it/) 🇮🇹 at [Eurec
     - [x64dbg](https://docs.google.com/presentation/d/1VEpso-rWsI_PT2iIKwAxJNlxXVLx37o2dVoGGw8-lKg/)
     - [Process Monitor](https://docs.google.com/presentation/d/1u4bPfGMd1jmidV23zGPB_SgXQHZ8Ga1p7EaD1awJ_EI/)
   - Out-of-guest 
-  - Sandbox [CAPEv2]()]
+  - Sandbox 
+    - [CAPEv2]()
 
 
 
