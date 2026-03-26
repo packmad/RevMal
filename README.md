@@ -53,6 +53,7 @@ Taught with ♥️ by [Simone Aonzo](https://simoneaonzo.it/) 🇮🇹 at [Eurec
   - x86_32
   - x86_64
 - System Calls
+  - Evading User-Mode Hooking in Windows 
 
 
 ### Part IV – Static & Dynamic Analysis [[pdf](slides/StaticAndDynamic.pdf)]
