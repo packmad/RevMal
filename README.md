@@ -41,7 +41,8 @@ Taught with ♥️ by [Simone Aonzo](https://simoneaonzo.it/) 🇮🇹 at [Eurec
 - Dealing with “exceptional” situations
   - Linux Signals
   - Windows Exception Handling
-- File Formats [[ImHex](https://docs.google.com/presentation/d/1kE0q6CLBCI1r-qQgidsG04wvP4krTuVOKiRusPa3RTA/)]
+- File Formats 
+  - [ImHex](https://docs.google.com/presentation/d/1kE0q6CLBCI1r-qQgidsG04wvP4krTuVOKiRusPa3RTA/)
   - Windows Portable Executable
 
 
@@ -67,16 +68,13 @@ Taught with ♥️ by [Simone Aonzo](https://simoneaonzo.it/) 🇮🇹 at [Eurec
   - Call/Control/Data Graphs
   - Lifting
   - Decompiling
-  - [Ghidra](https://docs.google.com/presentation/d/1TxCvwWVlZOxtaPs5zwnFMZNAbWhTnScjuHQ2N4GCD6I/)
-  - [PyGhidra Automation](Ghidra/ghidra.pdf)
+  - [Ghidra + Capa](https://docs.google.com/presentation/d/1TxCvwWVlZOxtaPs5zwnFMZNAbWhTnScjuHQ2N4GCD6I/)
+  - [PyGhidra Automation](slides/GhidraAutomation.pdf)
 - Dynamic Analysis
   - In-guest
     - [x64dbg](https://docs.google.com/presentation/d/1VEpso-rWsI_PT2iIKwAxJNlxXVLx37o2dVoGGw8-lKg/)
     - [Process Monitor](https://docs.google.com/presentation/d/1u4bPfGMd1jmidV23zGPB_SgXQHZ8Ga1p7EaD1awJ_EI/)
   - Out-of-guest 
-  - Sandbox 
-    - [CAPEv2]()
-
 
 
 ### Part V – Surreptitious Software [[pdf](slides/Surreptitious.pdf)]
@@ -96,6 +94,8 @@ Taught with ♥️ by [Simone Aonzo](https://simoneaonzo.it/) 🇮🇹 at [Eurec
 ---
 
 ## Virtual Machines
+
+[How to use the VMs in Eurecom's Labs](Guide_to_Eurecom_Labs_VMs.md)
 
 ### Passwords
 
@@ -130,11 +130,7 @@ Development
 - Visual Studio Code
 - Visual Studio 2022
 
-In order to update this project, open PowerShell
-```
-cd C:\Users\dude\Desktop\RevMal
-git pull
-```
+
 
 ---
 
@@ -152,8 +148,6 @@ Scripts:
 ---
 
 ## License
-
-The source code in this repository is licensed under the MIT License. 
 
 The slides (PDFs and Google Slides) are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0).
 
