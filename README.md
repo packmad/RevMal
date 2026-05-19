@@ -70,6 +70,7 @@ Taught with ♥️ by [Simone Aonzo](https://simoneaonzo.it/) 🇮🇹 at [Eurec
   - Decompiling
   - [Ghidra + Capa](https://docs.google.com/presentation/d/1TxCvwWVlZOxtaPs5zwnFMZNAbWhTnScjuHQ2N4GCD6I/)
   - [PyGhidra Automation](slides/GhidraAutomation.pdf)
+  - [LLMs for SRE](https://docs.google.com/presentation/d/1IMLIzfCIBGlmINXVmo2K4oVcBdftqxHrsmYjq5dktOg/)
 - Dynamic Analysis
   - In-guest
     - [x64dbg](https://docs.google.com/presentation/d/1VEpso-rWsI_PT2iIKwAxJNlxXVLx37o2dVoGGw8-lKg/)
